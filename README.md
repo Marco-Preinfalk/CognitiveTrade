@@ -92,4 +92,4 @@ This is a learning project, not financial advice. The generated signals are expe
 
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE).
