@@ -146,6 +146,14 @@ class Portfolio:
 
     def open_trade(self, asset, signal_type, entry_price, stop_loss, take_profit, position_size):
         """Open a new trade, adjusting entry price for slippage."""
+        # Auto-adjust position size if it exceeds allowed capital
+        required_capital = position_size * entry_price
+        max_capital_per_trade = self.initial_balance * 0.25
+        allowed_capital = min(self.current_balance, max_capital_per_trade)
+        
+        if required_capital > allowed_capital:
+            position_size = allowed_capital / entry_price
+
         if not self.can_open_position(asset, position_size, entry_price):
             return None
 

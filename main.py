@@ -135,7 +135,7 @@ class TradingBot:
             time.sleep(0.5)
             signal = self.strategy.analyze_asset(asset, asset_type=asset_type, timeframe="1h")
 
-            if signal:
+            if signal and signal.get('signal') in ['BUY', 'SELL']:
                 signal_display = format_trade_signal(signal)
                 print_success(f"  Signal for {asset}:{signal_display}")
 
@@ -164,6 +164,10 @@ class TradingBot:
 
         asset = signal.get('asset')
         
+        if self.portfolio.current_balance <= 0:
+            print_warning(f"Not enough capital to open trade for {asset}. Skipping.")
+            return
+
         risk_pct = RISK_PER_TRADE
         if risk_pct < 1:
             risk_pct = risk_pct * 100  # 0.02 -> 2.0
@@ -236,13 +240,13 @@ class TradingBot:
 
         if TRADING_MODE in ["CRYPTO", "HYBRID"]:
             print_info("Backtesting crypto...")
-            crypto_results = self.backtest_engine.backtest_multiple(CRYPTO_PAIRS[:1], "CRYPTO")
+            crypto_results = self.backtest_engine.backtest_multiple(CRYPTO_PAIRS, "CRYPTO")
             if crypto_results:
                 self.backtest_engine.print_backtest_results(crypto_results)
 
         if TRADING_MODE in ["STOCKS", "HYBRID"]:
             print_info("Backtesting stocks...")
-            stock_results = self.backtest_engine.backtest_multiple(STOCKS[:2], "STOCK")
+            stock_results = self.backtest_engine.backtest_multiple(STOCKS, "STOCK")
             if stock_results:
                 self.backtest_engine.print_backtest_results(stock_results)
 
@@ -252,7 +256,7 @@ class TradingBot:
 
         if TRADING_MODE in ["CRYPTO", "HYBRID"]:
             print_info("\nCRYPTO (24h stats)")
-            for symbol in CRYPTO_PAIRS[:3]:
+            for symbol in CRYPTO_PAIRS:
                 stats = self.fetcher.get_crypto_24h_stats(symbol)
                 if stats:
                     change_color = "🟢" if stats['change'] >= 0 else "🔴"
@@ -260,7 +264,7 @@ class TradingBot:
 
         if TRADING_MODE in ["STOCKS", "HYBRID"]:
             print_info("\nSTOCKS (Yahoo Info)")
-            for symbol in STOCKS[:5]:
+            for symbol in STOCKS:
                 info = self.fetcher.get_stock_info(symbol)
                 if info and info.get('price') is not None:
                     change_color = "🟢" if (info.get('change', 0) or 0) >= 0 else "🔴"

@@ -77,6 +77,7 @@ class BacktestEngine:
                     score, details = self.analyzer.get_technical_score(indicators)
                     
                     # Simplified signal based on tech score (avoids thousands of LLM calls)
+                    signal_dict = None
                     if score >= 20.0:
                         signal_dict = {'signal': 'BUY', 'confidence': min(0.9, 0.5 + score/200.0)}
                     elif score <= -20.0:

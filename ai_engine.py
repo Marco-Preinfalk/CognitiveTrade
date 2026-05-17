@@ -94,21 +94,34 @@ class AIEngine:
             return None
 
     def _sanitize_signal(self, signal, tech_data):
-        """Normalize AI output (confidence scale, entry price, signal names)."""
+        """Clean and validate AI signal data to prevent type errors."""
         close = tech_data.get('close', 0)
+        
+        def safe_float(val, default=0.0):
+            if val is None:
+                return default
+            try:
+                if isinstance(val, str):
+                    val = val.replace('$', '').replace(',', '')
+                return float(val)
+            except (ValueError, TypeError):
+                return default
 
         # Confidence: some models return 75 instead of 0.75
-        conf = signal.get('confidence', 0)
+        conf = safe_float(signal.get('confidence', 0))
         if conf > 1:
-            signal['confidence'] = conf / 100.0
-
-
-        signal['confidence'] = max(0.0, min(1.0, signal.get('confidence', 0)))
+            conf = conf / 100.0
+        signal['confidence'] = max(0.0, min(1.0, conf))
 
         # Entry Price: fall back to close if missing or unrealistic
-        entry = signal.get('entry_price', 0)
+        entry = safe_float(signal.get('entry_price', 0))
         if entry <= 0 or abs(entry - close) / close > 0.1:  # Mehr als 10% Abweichung
             signal['entry_price'] = close
+        else:
+            signal['entry_price'] = entry
+            
+        signal['stop_loss'] = safe_float(signal.get('stop_loss', 0))
+        signal['take_profit'] = safe_float(signal.get('take_profit', 0))
 
 
         sig = signal.get('signal', '').upper().strip()
