@@ -1,0 +1,15 @@
+requests
+colorama
+python-telegram-bot
+alpaca-trade-api>=3.0.0
+flask
+scikit-learn
+joblib
+yfinance
+ta
+ollama
+python-binance
+python-dotenv
+numpy
+pandas>=2.0,<3.0
+websockets>=9.0,<11

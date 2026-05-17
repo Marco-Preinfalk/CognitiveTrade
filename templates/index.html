@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepTrade AI – Intelligent Trading Console</title>
+    <meta name="description" content="AI-powered trading dashboard with real-time portfolio monitoring, news-driven signals, and automated trading">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+</head>
+<body>
+    <div class="glass-background"></div>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel" id="sidebar">
+            <div class="brand">
+                <i class="bi bi-robot brand-icon"></i>
+                <div class="brand-text">
+                    <h1>DeepTrade</h1>
+                    <span class="version">v2.0 Advanced AI</span>
+                </div>
+            </div>
+            
+            <ul class="nav-links">
+                <li class="active" data-page="dashboard"><a href="#"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a></li>
+                <li data-page="portfolio"><a href="#"><i class="bi bi-briefcase"></i> Portfolio</a></li>
+                <li data-page="signals"><a href="#"><i class="bi bi-lightning-charge"></i> AI Signals</a></li>
+                <li data-page="history"><a href="#"><i class="bi bi-clock-history"></i> History</a></li>
+            </ul>
+
+            <div class="system-status">
+                <div class="status-indicator online">
+                    <span class="ping"></span>
+                    <span id="health-indicator">System Online</span>
+                </div>
+                <div class="last-sync">
+                    <i class="bi bi-arrow-repeat"></i> <span id="last-update">Syncing...</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- ============ PAGE: DASHBOARD ============ -->
+            <section class="page-section active" id="page-dashboard">
+                <!-- Top Dashboard Header -->
+                <header class="top-header">
+                    <div>
+                        <h2>Portfolio Overview</h2>
+                        <p class="subtitle">Live Performance & Analytics</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" id="btn-refresh" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                        <button id="btn-autotrade" class="btn btn-primary" onclick="toggleAutoTrade()"><i class="bi bi-play-fill"></i> Auto-Trade: OFF</button>
+                    </div>
+                </header>
+
+                <!-- Metrics Highlight Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card glass-panel gradient-border">
+                        <div class="metric-icon blue"><i class="bi bi-wallet2"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Total Equity</span>
+                            <h3 id="total-equity" class="value calc-font">$--</h3>
+                            <div class="metric-trend" id="total-pnl-wrapper">
+                                <span id="return-percent" class="trend-badge">--%</span>
+                                <span class="trend-text">All time</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-panel">
+                        <div class="metric-icon purple"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Unrealized P&L</span>
+                            <h3 id="unrealized-pnl" class="value calc-font">$--</h3>
+                            <div class="metric-trend">
+                                <span id="open-positions" class="trend-text highlight">0 Open Positions</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-panel">
+                        <div class="metric-icon green"><i class="bi bi-trophy"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Win Rate</span>
+                            <h3 id="win-rate" class="value calc-font">--%</h3>
+                            <div class="metric-trend">
+                                <span id="profit-factor" class="trend-text highlight">PF: --</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card glass-panel">
+                        <div class="metric-icon orange"><i class="bi bi-shield-check"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Sharpe Ratio</span>
+                            <h3 id="sharpe-ratio" class="value calc-font">--</h3>
+                            <div class="metric-trend">
+                                <span class="trend-text">Max DD: <span id="max-drawdown" class="text-danger">--%</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Central Content Grid -->
+                <div class="content-grid border-top-glow">
+                    
+                    <!-- Main Chart -->
+                    <div class="chart-container glass-panel">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-activity"></i> Equity Curve</h3>
+                            <div class="chart-filters" id="equity-chart-filters">
+                                <button class="active" data-range="1D">1D</button>
+                                <button data-range="1W">1W</button>
+                                <button data-range="1M">1M</button>
+                                <button data-range="ALL">All</button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Live Signals Panel (compact) -->
+                    <div class="signals-container glass-panel">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-lightning-fill text-warning"></i> Active AI Signals</h3>
+                            <span class="badge info">DeepSeek-v2</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset</th>
+                                        <th>Signal</th>
+                                        <th>Conf</th>
+                                        <th>R/R</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="signals-table-body">
+                                    <tr><td colspan="4" class="text-center"><i class="bi bi-arrow-repeat spin"></i> Scanning markets...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Open Positions Panel -->
+                    <div class="positions-container glass-panel span-full">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-briefcase-fill"></i> Open Positions</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                        <th>Entry Price</th>
+                                        <th>Current</th>
+                                        <th>SL / TP</th>
+                                        <th>Unrealized P&L</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="positions-table-body">
+                                    <tr><td colspan="7" class="text-center"><i class="bi bi-three-dots"></i> Loading positions...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Recent Trades Panel -->
+                    <div class="trades-container glass-panel">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-clock-history"></i> Recent Trades</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="modern-table compact">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Asset</th>
+                                        <th>Type</th>
+                                        <th>Entry Date</th>
+                                        <th>P&L</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trades-table-body">
+                                    <tr><td colspan="5" class="text-center"><i class="bi bi-three-dots"></i> Loading history...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Market Overview -->
+                    <div class="market-container glass-panel">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-globe2"></i> Market Pulse</h3>
+                        </div>
+                        <div class="market-ticker" id="market-ticker">
+                            <div class="text-center p-3"><i class="bi bi-arrow-repeat spin"></i> Fetching data...</div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ============ PAGE: PORTFOLIO ============ -->
+            <section class="page-section" id="page-portfolio">
+                <header class="top-header">
+                    <div>
+                        <h2><i class="bi bi-briefcase-fill"></i> Portfolio Details</h2>
+                        <p class="subtitle">Asset Allocation & Performance</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                    </div>
+                </header>
+
+                <!-- Portfolio Summary Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card glass-panel gradient-border">
+                        <div class="metric-icon blue"><i class="bi bi-wallet2"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Available Cash</span>
+                            <h3 id="pf-cash" class="value calc-font">$--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel">
+                        <div class="metric-icon purple"><i class="bi bi-pie-chart-fill"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Invested Capital</span>
+                            <h3 id="pf-invested" class="value calc-font">$--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel">
+                        <div class="metric-icon green"><i class="bi bi-cash-stack"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Realized P&L</span>
+                            <h3 id="pf-realized-pnl" class="value calc-font">$--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel">
+                        <div class="metric-icon orange"><i class="bi bi-bar-chart-line"></i></div>
+                        <div class="metric-info">
+                            <span class="label">Total Trades</span>
+                            <h3 id="pf-total-trades" class="value calc-font">--</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Content -->
+                <div class="content-grid">
+                    <!-- Allocation Chart -->
+                    <div class="chart-container glass-panel">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-pie-chart"></i> Asset Allocation</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="allocationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Positions -->
+                    <div class="glass-panel span-full">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-list-columns-reverse"></i> All Open Positions</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="modern-table" id="pf-positions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                        <th>Entry Price</th>
+                                        <th>Current Price</th>
+                                        <th>Stop Loss</th>
+                                        <th>Take Profit</th>
+                                        <th>Unrealized P&L</th>
+                                        <th>P&L %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pf-positions-body">
+                                    <tr><td colspan="9" class="text-center text-muted">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Performance Metrics -->
+                    <div class="glass-panel span-full">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-graph-up"></i> Performance Metrics</h3>
+                        </div>
+                        <div class="perf-metrics-grid" id="pf-perf-grid">
+                            <div class="perf-metric">
+                                <span class="perf-label">Win Rate</span>
+                                <span class="perf-value calc-font" id="pf-win-rate">--%</span>
+                                <div class="perf-bar"><div class="perf-bar-fill green" id="pf-wr-bar" style="width: 0%"></div></div>
+                            </div>
+                            <div class="perf-metric">
+                                <span class="perf-label">Profit Factor</span>
+                                <span class="perf-value calc-font" id="pf-profit-factor">--</span>
+                                <div class="perf-bar"><div class="perf-bar-fill blue" id="pf-pf-bar" style="width: 0%"></div></div>
+                            </div>
+                            <div class="perf-metric">
+                                <span class="perf-label">Sharpe Ratio</span>
+                                <span class="perf-value calc-font" id="pf-sharpe">--</span>
+                                <div class="perf-bar"><div class="perf-bar-fill purple" id="pf-sr-bar" style="width: 0%"></div></div>
+                            </div>
+                            <div class="perf-metric">
+                                <span class="perf-label">Max Drawdown</span>
+                                <span class="perf-value calc-font text-danger" id="pf-max-dd">--%</span>
+                                <div class="perf-bar"><div class="perf-bar-fill danger" id="pf-dd-bar" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============ PAGE: AI SIGNALS ============ -->
+            <section class="page-section" id="page-signals">
+                <header class="top-header">
+                    <div>
+                        <h2><i class="bi bi-lightning-charge-fill"></i> AI Trading Signals</h2>
+                        <p class="subtitle">News-Driven Analysis powered by DeepSeek AI</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" id="btn-refresh-signals" onclick="loadDetailedSignals()">
+                            <i class="bi bi-arrow-clockwise"></i> Analyse starten
+                        </button>
+                    </div>
+                </header>
+
+                <div class="signals-info-bar glass-panel">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Die AI analysiert technische Indikatoren <strong>und</strong> aktuelle Finanznachrichten von Reuters, Bloomberg, MarketWatch und weiteren seriösen Quellen.</span>
+                </div>
+
+                <div id="detailed-signals-container" class="signals-detail-grid">
+                    <div class="text-center p-3 text-muted">
+                        <i class="bi bi-lightning-charge" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p style="margin-top: 12px;">Klicke <strong>"Analyse starten"</strong> um die AI-Signale mit aktuellen News zu laden.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============ PAGE: HISTORY ============ -->
+            <section class="page-section" id="page-history">
+                <header class="top-header">
+                    <div>
+                        <h2><i class="bi bi-clock-history"></i> Trade History</h2>
+                        <p class="subtitle">Complete Trading Record</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="history-stats" id="history-stats">
+                            <span class="badge info" id="hist-total">0 Trades</span>
+                            <span class="badge long" id="hist-wins">0 Wins</span>
+                            <span class="badge short" id="hist-losses">0 Losses</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- History PnL Chart -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <h3><i class="bi bi-bar-chart"></i> P&L per Trade</h3>
+                    </div>
+                    <div class="chart-wrapper" style="height: 250px;">
+                        <canvas id="pnlChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Full Trade Table -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <h3><i class="bi bi-table"></i> All Closed Trades</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="modern-table" id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Asset</th>
+                                    <th>Type</th>
+                                    <th>Entry Price</th>
+                                    <th>Exit Price</th>
+                                    <th>Entry Time</th>
+                                    <th>Exit Time</th>
+                                    <th>P&L</th>
+                                    <th>P&L %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr><td colspan="9" class="text-center text-muted">Loading trade history...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

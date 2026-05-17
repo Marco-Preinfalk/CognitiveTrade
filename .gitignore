@@ -1,0 +1,43 @@
+# ===== Environment & Secrets =====
+.env
+*.env.local
+
+# ===== Portfolio State (user-specific) =====
+portfolio_data.json
+.auto_trade_state
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+venv/
+.venv/
+env/
+
+# ===== ML Models (large files) =====
+models/
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== OS =====
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# ===== Logs & Temp =====
+*.log
+curl_output.*
+current_api_portfolio.txt
+
+# ===== Gemini AI =====
+.gemini/
