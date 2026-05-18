@@ -505,11 +505,15 @@ def get_signals_detailed():
             except Exception:
                 pass
 
+        portfolio = get_portfolio()
+        
         # Bestimme den richtigen Status-Text
         if signal:
-            reason_text = signal.get('reason', 'Signal generiert')
+            reason_text = signal.get('reason', 'Signal generated')
+        elif asset in portfolio.positions:
+            reason_text = 'Asset is currently held in portfolio (Analysis paused)'
         else:
-            reason_text = 'Kein starkes Signal erkannt (Confidence zu niedrig oder HOLD)'
+            reason_text = 'No strong signal detected (Confidence too low or HOLD)'
 
         entry = {
             'asset': asset,

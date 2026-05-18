@@ -241,14 +241,14 @@ function buildSignalCard(s) {
         </div>
         <div class="signal-card-body">
             <div class="signal-details">
-                <div class="signal-detail-row"><span class="label">${isHold ? 'Aktueller Preis' : 'Entry Price'}</span><span class="value">${s.entry_price ? fmt(s.entry_price) : '--'}</span></div>
+                <div class="signal-detail-row"><span class="label">${isHold ? 'Current Price' : 'Entry Price'}</span><span class="value">${s.entry_price ? fmt(s.entry_price) : '--'}</span></div>
                 ${!isHold ? `<div class="signal-detail-row"><span class="label">Stop Loss</span><span class="value text-danger">${s.stop_loss ? fmt(s.stop_loss) : '--'}</span></div>
                 <div class="signal-detail-row"><span class="label">Take Profit</span><span class="value text-success">${s.take_profit ? fmt(s.take_profit) : '--'}</span></div>
                 <div class="signal-detail-row"><span class="label">Risk/Reward</span><span class="value">${s.risk_reward ? s.risk_reward.toFixed(2) + ':1' : '--'}</span></div>` : ''}
                 ${s.reason ? `<div class="signal-reason"><i class="bi bi-robot"></i> ${s.reason}</div>` : ''}
             </div>
             <div class="signal-news">
-                <div class="signal-news-title"><i class="bi bi-newspaper"></i> Aktuelle Nachrichten</div>
+                <div class="signal-news-title"><i class="bi bi-newspaper"></i> Latest News</div>
                 ${newsHtml}
             </div>
         </div>`;
