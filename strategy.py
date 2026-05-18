@@ -295,6 +295,11 @@ class StrategyEngine:
         # Ask AI for signal (with news context)
         ai_signal = self.ai_engine.analyze_market(asset, timeframe, tech_indicators, news_digest=news_digest)
 
+        if not hasattr(self, 'last_raw_signals'):
+            self.last_raw_signals = {}
+        if ai_signal:
+            self.last_raw_signals[asset] = ai_signal.copy()
+
         if ai_signal and ai_signal.get('confidence', 0) >= SIGNAL_CONFIDENCE_THRESHOLD:
             # Validate and enhance signal
             ai_signal = self._enhance_signal(ai_signal, tech_indicators)

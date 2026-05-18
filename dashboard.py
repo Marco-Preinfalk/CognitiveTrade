@@ -251,13 +251,13 @@ def background_trading_loop():
                     if is_in_wash_cooldown(asset):
                         continue
                         
-                    print(f"[AUTO-TRADE] Analysiere {asset}...")
                     signal = strategy.analyze_asset(asset, asset_type=asset_type, timeframe="1h")
+                    raw_signal = strategy.last_raw_signals.get(asset) if hasattr(strategy, 'last_raw_signals') else signal
                     
                     # Signal cachen for Dashboard-API
                     with _cached_signals_lock:
                         _cached_signals[asset] = {
-                            'signal': signal,
+                            'signal': raw_signal,
                             'timestamp': time.time()
                         }
                     
@@ -452,10 +452,11 @@ def get_signals():
     # Verwende gecachte Signale statt neue AI-Aufrufe
     signals = []
     
+    assets = STOCKS if TRADING_MODE in ["STOCKS", "HYBRID"] else CRYPTO_PAIRS
     with _cached_signals_lock:
-        for asset in STOCKS[:5]:
+        for asset in assets:
             cached = _cached_signals.get(asset)
-            if cached and cached['signal'] and (time.time() - cached['timestamp']) < 300:
+            if cached and cached['signal'] and (time.time() - cached['timestamp']) < 900:
                 signal = cached['signal']
                 signals.append({
                     'asset': asset,
@@ -484,7 +485,7 @@ def get_signals_detailed():
         signal = None
         with _cached_signals_lock:
             cached = _cached_signals.get(asset)
-            if cached and (time.time() - cached['timestamp']) < 300:
+            if cached and (time.time() - cached['timestamp']) < 900:
                 signal = cached['signal']
         
         # Hole News fuer jedes Asset
