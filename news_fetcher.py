@@ -15,7 +15,7 @@ class NewsFetcher:
         self.cache = {}
         self.cache_expiry = {}
         self.cache_ttl = 300  # 5 minute cache
-        self.enabled = bool(self.api_key and self.api_key != "dein_key_hier")
+        self.enabled = bool(self.api_key and self.api_key != "YOUR_FINNHUB_API_KEY")
 
         if not self.enabled:
             print_warning("Finnhub API key not configured. News disabled.")

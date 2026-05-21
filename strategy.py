@@ -184,11 +184,11 @@ class TechnicalAnalyzer:
         bb_range = bb_upper - bb_lower if bb_upper != bb_lower else 1
         bb_position = (close - bb_lower) / bb_range
         if bb_position < 0.2:
-            bb_score = 20  # Nahe unterem Band = Buy Signal
+            bb_score = 20  # Near lower band = Buy signal
         elif bb_position < 0.4:
             bb_score = 10
         elif bb_position > 0.8:
-            bb_score = -20  # Nahe oberem Band = Sell Signal
+            bb_score = -20  # Near upper band = Sell signal
         elif bb_position > 0.6:
             bb_score = -10
         else:

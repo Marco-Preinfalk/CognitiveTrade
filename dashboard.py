@@ -340,7 +340,7 @@ def background_trading_loop():
                                 print(f"[ALPACA] Order failed for {asset}!")
                         
                         print(f"[AUTO-TRADE] === TRADE OPENED: {signal.get('signal')} {position_size} {asset} @ ${entry_price:.2f} ===")
-                        time.sleep(2)  # Pause zwischen Trades
+                        time.sleep(2)  # Pause between trades
                     else:
                         print(f"[AUTO-TRADE] {asset}: Trade could not be opened (capital/limit)")
                             

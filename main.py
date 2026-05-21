@@ -42,8 +42,8 @@ class CognitiveTrade:
         if TELEGRAM_ENABLED and TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
             is_placeholder = (
                 not TELEGRAM_BOT_TOKEN
-                or TELEGRAM_BOT_TOKEN.startswith("DEIN_")
-                or "dein_" in TELEGRAM_BOT_TOKEN.lower()
+                or TELEGRAM_BOT_TOKEN.startswith("YOUR_")
+                or "your_" in TELEGRAM_BOT_TOKEN.lower()
                 or len(TELEGRAM_BOT_TOKEN) < 20
             )
             if not is_placeholder:

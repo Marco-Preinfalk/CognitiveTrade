@@ -41,3 +41,8 @@ current_api_portfolio.txt
 
 # ===== Gemini AI =====
 .gemini/
+
+# ===== Dev/Test Scripts (not for production) =====
+_translate.py
+fix_demo.py
+generate_demo.py

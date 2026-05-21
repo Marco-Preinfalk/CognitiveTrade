@@ -149,11 +149,11 @@ class AIEngine:
         tech_score = tech_data.get('tech_score', 0)
         score_interpretation = "NEUTRAL"
         if tech_score > 20:
-            score_interpretation = "STARK BULLISH"
+            score_interpretation = "STRONGLY BULLISH"
         elif tech_score > 10:
             score_interpretation = "BULLISH"
         elif tech_score < -20:
-            score_interpretation = "STARK BEARISH"
+            score_interpretation = "STRONGLY BEARISH"
         elif tech_score < -10:
             score_interpretation = "BEARISH"
 
