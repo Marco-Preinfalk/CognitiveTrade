@@ -52,8 +52,8 @@ function updateClock() {
 }
 
 // ========== EXECUTION LOG ==========
-function addLogEntry(asset, signal, pnl, action, source) {
-    const time = moment().format('HH:mm:ss');
+function addLogEntry(asset, signal, pnl, action, source, customTime) {
+    const time = customTime ? fmtTime(customTime) : moment().format('HH:mm:ss');
     const entry = { time, asset, signal, pnl, action, source: source || 'AI' };
     executionLog.unshift(entry);
     if (executionLog.length > MAX_LOG_ENTRIES) executionLog.pop();
@@ -232,7 +232,7 @@ const updatePortfolio = async () => {
                 const exists = executionLog.find(e => e.asset === p.asset && e.signal === p.type);
                 if (!exists) {
                     addLogEntry(p.asset, p.type, p.unrealized_pnl_percent,
-                        `${p.type} ${p.qty.toFixed(2)} @ ${fmt(p.entry_price)} | Current: ${fmt(p.current_price)}`, 'AI');
+                        `${p.type} ${p.qty.toFixed(2)} @ ${fmt(p.entry_price)} | Current: ${fmt(p.current_price)}`, 'AI', p.entry_time);
                 }
             });
         }
@@ -269,7 +269,7 @@ const updateTrades = async () => {
             const exists = executionLog.find(e => e.asset === t.asset && e.action && e.action.includes('CLOSED'));
             if (!exists) {
                 addLogEntry(t.asset, t.type === 'BUY' ? 'SELL' : 'BUY', t.pnl_percent,
-                    `CLOSED ${t.asset} | Entry: ${fmt(t.entry_price)} → Exit: ${fmt(t.exit_price)}`, 'EXEC');
+                    `CLOSED ${t.asset} | Entry: ${fmt(t.entry_price)} → Exit: ${fmt(t.exit_price)}`, 'EXEC', t.exit_time);
             }
         });
     } catch (e) { console.error("Trades error:", e); }

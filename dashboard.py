@@ -395,7 +395,8 @@ def get_portfolio_data():
             'stop_loss': trade.stop_loss,
             'take_profit': trade.take_profit,
             'unrealized_pnl': upnl,
-            'unrealized_pnl_percent': upnl_pct
+            'unrealized_pnl_percent': upnl_pct,
+            'entry_time': trade.entry_time.isoformat() if hasattr(trade, 'entry_time') and trade.entry_time else None
         })
     
     # If Alpaca is connected, incorporate Alpaca positions
