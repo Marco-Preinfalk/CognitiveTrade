@@ -11,6 +11,8 @@ Automated trading bot that uses a local LLM (via Ollama) together with technical
 - **Web dashboard** for live portfolio monitoring, trade history, and signal overview
 - **Telegram alerts** for trade notifications
 - **Alpaca integration** for broker-connected paper trading (optional)
+- **Enterprise-grade state management** with atomic file writes to prevent data corruption
+- **Comprehensive test suite** covering LLM parsing, portfolio math, and signal validation
 - **Backtesting** engine to validate strategies on historical data
 
 ## Architecture
@@ -58,6 +60,14 @@ python main.py
 # Web dashboard
 python dashboard.py
 # then open http://localhost:5000
+```
+
+### Testing
+
+The project includes a robust `pytest` suite for core logic (portfolio math, AI parsing, and strategy):
+
+```bash
+pytest tests/ -v
 ```
 
 ## Configuration

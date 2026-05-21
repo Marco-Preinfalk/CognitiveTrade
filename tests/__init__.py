@@ -1,0 +1,1 @@
+# CognitiveTrade test suite
