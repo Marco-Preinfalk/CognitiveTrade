@@ -9,7 +9,7 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 
-logger = logging.getLogger("TradingBot")
+logger = logging.getLogger("CognitiveTrade")
 logger.setLevel(logging.DEBUG)
 
 
@@ -51,7 +51,7 @@ def format_percent(value):
 
 def parse_ai_response(response_text):
     """Extract JSON from LLM response text. Handles raw JSON, markdown code blocks,
-    embedded JSON, and DeepSeek <think> tags."""
+    embedded JSON, and model <think> tags."""
     if not response_text or not response_text.strip():
         return None
 

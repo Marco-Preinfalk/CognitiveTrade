@@ -19,12 +19,12 @@ from utils import (
 )
 
 
-class TradingBot:
+class CognitiveTrade:
     """CLI trading bot with AI-powered signal generation and paper trading."""
 
     def __init__(self):
         print_divider()
-        print_success("AI Trading Bot v2.0")
+        print_success("CognitiveTrade")
         print_divider()
 
         self.fetcher = get_data_fetcher()
@@ -72,7 +72,7 @@ class TradingBot:
                 print("3. Run backtest")
                 print("4. Show portfolio")
                 print("5. Show market info")
-                print("6. DeepSeek test")
+                print("6. LLM connection test")
                 print("7. Clear cache")
                 print("0. Exit")
                 print_divider()
@@ -91,7 +91,7 @@ class TradingBot:
                 elif choice == "5":
                     self.show_market_info()
                 elif choice == "6":
-                    self.test_deepseek()
+                    self.test_llm_connection()
                 elif choice == "7":
                     self.fetcher.clear_cache()
                     print_success("Cache cleared")
@@ -274,14 +274,14 @@ class TradingBot:
                 else:
                     print_warning(f"  {symbol}: Data unavailable")
 
-    def test_deepseek(self):
-        print_info("\nDEEPSEEK TEST")
+    def test_llm_connection(self):
+        print_info("\nLLM CONNECTION TEST")
         print_divider()
 
 
         model_info = self.ai_engine.get_model_info()
         if model_info:
-            print_success("DeepSeek connected")
+            print_success("LLM connected")
             print_info(f"Model: {self.ai_engine.model}")
             print_info(f"Temperature: {self.ai_engine.temperature}")
         else:
@@ -306,11 +306,11 @@ class TradingBot:
             print(f"  MACD: {tech_data['MACD']:.6f}")
             print(f"  Tech Score: {tech_score:+.2f}")
 
-            print_info("\nAsking DeepSeek for trading signal...")
+            print_info("\nAsking LLM for trading signal...")
             signal = self.ai_engine.analyze_market("BTCUSDT", "1h", tech_data)
 
             if signal:
-                print_success("DeepSeek response:")
+                print_success("LLM response:")
                 print(json.dumps(signal, indent=2, ensure_ascii=False))
             else:
                 print_error("No valid signal received")
@@ -319,7 +319,7 @@ class TradingBot:
 
 def main():
 
-    bot = TradingBot()
+    bot = CognitiveTrade()
     bot.menu()
 
 

@@ -1,4 +1,4 @@
-# AI Trading Bot
+# AI CognitiveTrade
 
 Automated trading bot that uses a local LLM (via Ollama) together with technical analysis to generate trading signals. Supports paper trading with simulated slippage and transaction costs.
 
@@ -38,8 +38,8 @@ config.py          Central configuration (.env based)
 ### Installation
 
 ```bash
-git clone https://github.com/Marco-Preinfalk/Trading-Bot.git
-cd Trading-Bot
+git clone https://github.com/Marco-Preinfalk/CognitiveTrade.git
+cd CognitiveTrade
 
 pip install -r requirements.txt
 
