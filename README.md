@@ -1,6 +1,8 @@
 # AI CognitiveTrade
 
-Automated trading bot that uses a local LLM (via Ollama) together with technical analysis to generate trading signals. Supports paper trading with simulated slippage and transaction costs.
+![CognitiveTrade Dashboard](CognitiveTrade.png)
+
+Automated trading infrastructure combining local LLMs (via Ollama) with technical analysis to generate autonomous market signals. Supports paper trading with simulated slippage and transaction costs, plus optional live execution via Alpaca.
 
 ## Features
 
@@ -8,17 +10,17 @@ Automated trading bot that uses a local LLM (via Ollama) together with technical
 - **Technical indicators** – RSI, MACD, Bollinger Bands, ADX, Stochastic, OBV
 - **News sentiment** via Finnhub for real-time financial news context
 - **Realistic paper trading** with configurable bid-ask spread and commission simulation
+- **Backtesting engine** to validate strategies on historical OHLCV data with full P&L accounting
 - **Web dashboard** for live portfolio monitoring, trade history, and signal overview
 - **Telegram alerts** for trade notifications
 - **Alpaca integration** for broker-connected paper trading (optional)
 - **Enterprise-grade state management** with atomic file writes to prevent data corruption
 - **Comprehensive test suite** covering LLM parsing, portfolio math, and signal validation
-- **Backtesting** engine to validate strategies on historical data
 
 ## Architecture
 
 ```
-main.py            CLI interface
+main.py            Core execution engine & CLI interface
 dashboard.py       Flask web dashboard (localhost:5000)
 ai_engine.py       Ollama/LLM integration
 strategy.py        Technical analysis and signal generation
