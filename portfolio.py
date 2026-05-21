@@ -31,7 +31,7 @@ class Trade:
         self.status = TradeStatus.OPEN
         self.pnl = 0
         self.pnl_percent = 0
-        self.current_price = entry_price  # Für unrealized P&L Tracking
+        self.current_price = entry_price  # For unrealized P&L tracking
 
     def close_trade(self, exit_price):
         """Close trade, applying slippage and commission."""
@@ -180,7 +180,7 @@ class Portfolio:
         print_info(f"SL: {format_currency(stop_loss)} | TP: {format_currency(take_profit)}")
         print_info(f"Available capital: {format_currency(self.current_balance)}")
 
-        # Equity History tracken
+        # Record equity history
         self._record_equity()
 
         return trade
@@ -202,7 +202,7 @@ class Portfolio:
         color = "[+]" if pnl >= 0 else "[-]"
         print_success(f"{color} Trade closed: {trade.id} - P&L: {format_currency(pnl)} ({format_percent(trade.pnl_percent)})")
 
-        # Equity History tracken
+        # Record equity history
         self._record_equity()
 
         return trade
@@ -219,14 +219,13 @@ class Portfolio:
         })
 
     def update_open_positions(self, current_prices_dict):
-        """
-        Aktualisiere offene Positionen und überprüfe auf Stop Loss / Take Profit
+        """Update open positions and check for stop loss / take profit.
 
         Args:
             current_prices_dict: {asset: current_price}
 
         Returns:
-            List von Trades die geschlossen wurden
+            List of trades that were closed.
         """
         closed_trades = []
         assets_to_close = []
@@ -276,7 +275,7 @@ class Portfolio:
         total_pnl = sum(t.pnl for t in self.closed_trades)
         win_rate = (len(winning_trades) / total_trades * 100) if total_trades > 0 else 0
 
-        # Durchschnittlicher Gewinn / Verlust
+        # Average win / loss
         avg_win = sum(t.pnl for t in winning_trades) / len(winning_trades) if winning_trades else 0
         avg_loss = sum(t.pnl for t in losing_trades) / len(losing_trades) if losing_trades else 0
 
@@ -285,10 +284,10 @@ class Portfolio:
         gross_loss = abs(sum(t.pnl for t in losing_trades)) if losing_trades else 0
         profit_factor = gross_profit / gross_loss if gross_loss > 0 else 999.0 if gross_profit > 0 else 0
 
-        # Max Drawdown berechnen
+        # Max drawdown
         max_drawdown, max_drawdown_pct = self._calculate_max_drawdown()
 
-        # Berechne unrealized P&L von offenen Positionen
+        # Calculate unrealized P&L from open positions
         unrealized_pnl = 0
         for asset, trade in self.positions.items():
             pnl, _ = trade.get_unrealized_pnl()
@@ -299,7 +298,7 @@ class Portfolio:
             t.position_size * t.current_price for t in self.positions.values()
         )
 
-        # Sharpe Ratio (vereinfacht)
+        # Sharpe Ratio (simplified)
         sharpe_ratio = self._calculate_sharpe_ratio()
 
         return {
@@ -396,7 +395,7 @@ class Portfolio:
 
         print(f"\nLast {len(trades_to_show)} trades:")
         print("-" * 90)
-        print(f"{'ID':<12} {'Asset':<10} {'Type':<5} {'Entry':>12} {'Exit':>12} {'P&L':>12} {'%':>8} {'Dauer':<10}")
+        print(f"{'ID':<12} {'Asset':<10} {'Type':<5} {'Entry':>12} {'Exit':>12} {'P&L':>12} {'%':>8} {'Duration':<10}")
         print("-" * 90)
 
         for trade in trades_to_show:
@@ -421,6 +420,14 @@ class Portfolio:
         print("-" * 90 + "\n")
 
     def save_to_file(self, filepath=PORTFOLIO_FILE):
+        """Save portfolio state to JSON file using atomic write.
+
+        Writes to a temporary file first, then atomically replaces the
+        target file. This prevents data corruption if the process crashes
+        mid-write (e.g., Ctrl+C, OOM, power loss).
+        """
+        import tempfile
+
         try:
             data = {
                 'initial_balance': self.initial_balance,
@@ -428,11 +435,24 @@ class Portfolio:
                 'trade_counter': self.trade_counter,
                 'open_trades': {asset: trade.to_dict() for asset, trade in self.positions.items()},
                 'closed_trades': [t.to_dict() for t in self.closed_trades],
-                'equity_history': self.equity_history[-500:],  # Letzte 500 Einträge
+                'equity_history': self.equity_history[-500:],
                 'saved_at': datetime.now().isoformat(),
             }
-            with open(filepath, 'w') as f:
-                json.dump(data, f, indent=2)
+
+            target_dir = os.path.dirname(os.path.abspath(filepath))
+            tmp_fd, tmp_path = tempfile.mkstemp(dir=target_dir, suffix='.tmp')
+            try:
+                with os.fdopen(tmp_fd, 'w') as f:
+                    json.dump(data, f, indent=2)
+                os.replace(tmp_path, filepath)
+            except BaseException:
+                # Clean up temp file on any failure (including KeyboardInterrupt)
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
+
             print_success(f"Portfolio saved to {filepath}")
         except Exception as e:
             print_error(f"Error saving portfolio: {str(e)}")
@@ -442,7 +462,24 @@ class Portfolio:
             return False
         try:
             with open(filepath, 'r') as f:
-                data = json.load(f)
+                raw = f.read()
+
+            if not raw.strip():
+                print_warning(f"Portfolio file {filepath} is empty, starting fresh")
+                return False
+
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError as e:
+                print_error(f"Portfolio file {filepath} is corrupted (invalid JSON): {e}")
+                # Rename the corrupt file so it's not lost but won't block startup
+                backup_path = filepath + '.corrupt'
+                try:
+                    os.replace(filepath, backup_path)
+                    print_warning(f"Corrupt file moved to {backup_path}")
+                except OSError:
+                    pass
+                return False
 
             self.initial_balance = data['initial_balance']
             self.current_balance = data['current_balance']
