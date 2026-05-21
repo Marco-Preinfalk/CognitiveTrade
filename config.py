@@ -65,7 +65,7 @@ STOCKS = [
     "AMZN",      # Amazon
     "WMT",       # Walmart
     "KO",        # Coca-Cola
-    # ETFs (diversifiziert)
+    # ETFs (diversified)
     "SPY",       # S&P 500 ETF
     "QQQ",       # Nasdaq 100 ETF
     # Volatile (good for short-term signals)
@@ -79,7 +79,7 @@ MAX_POSITIONS = int(os.getenv("MAX_POSITIONS", "5"))
 
 # ===== AI TRADING SIGNAL THRESHOLDS =====
 SIGNAL_CONFIDENCE_THRESHOLD = float(os.getenv("SIGNAL_CONFIDENCE_THRESHOLD", "0.55"))
-BUY_SIGNAL_STRENGTH = "STRONG"      # "STRONG", "MODERATE", oder "WEAK"
+BUY_SIGNAL_STRENGTH = "STRONG"      # "STRONG", "MODERATE", or "WEAK"
 SELL_SIGNAL_STRENGTH = "MODERATE"   # Sell even on moderate signals
 
 # ===== RISK MANAGEMENT =====

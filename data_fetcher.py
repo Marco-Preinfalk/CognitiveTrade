@@ -37,15 +37,15 @@ class AlpacaDataProvider:
 
     def get_stock_bars(self, symbol, days=90, timeframe='1Hour'):
         """
-        Get price data from Alpaca Data API
+        Get price data from the Alpaca Data API.
 
         Args:
-            symbol: z.B. "AAPL"
-            days: How many days back
+            symbol: e.g. "AAPL"
+            days: how many days back
             timeframe: '1Min', '5Min', '15Min', '1Hour', '1Day'
 
         Returns:
-            DataFrame with OHLCV data or None
+            DataFrame with OHLCV data or None.
         """
         if not self.connected:
             return None
@@ -82,7 +82,7 @@ class AlpacaDataProvider:
             if not bars:
                 return None
 
-            # Konvertiere zu DataFrame
+            # Convert to DataFrame
             data = []
             for bar in bars:
                 data.append({
@@ -162,15 +162,15 @@ class DataFetcher:
     @retry_on_failure(max_retries=2, delay=1.0, exceptions=(requests.RequestException,))
     def get_crypto_klines(self, symbol, interval="1h", limit=100):
         """
-        Hole bars-Daten (OHLCV) von Binance
+        Fetch OHLCV bar data from Binance.
 
         Args:
-            symbol: z.B. "BTCUSDT"
+            symbol: e.g. "BTCUSDT"
             interval: "1m", "5m", "15m", "1h", "4h", "1d"
-            limit: Anzahl bars (max 1000)
+            limit: number of bars (max 1000)
 
         Returns:
-            DataFrame mit OHLCV Daten
+            DataFrame with OHLCV data.
         """
         cache_key = f"klines_{symbol}_{interval}_{limit}"
         cached = self._get_cached(cache_key)
@@ -219,13 +219,13 @@ class DataFetcher:
 
     def get_current_price(self, symbol):
         """
-        Hole aktuellen Preis - Alpaca zuerst, dann Yahoo als Fallback.
+        Get current price — Alpaca first, then Yahoo as fallback.
 
         Args:
-            symbol: z.B. "BTCUSDT" (Crypto) oder "AAPL" (Stock)
-        
+            symbol: e.g. "BTCUSDT" (crypto) or "AAPL" (stock)
+
         Returns:
-            float Preis oder None
+            float price or None.
         """
         cache_key = f"price_{symbol}"
         cached = self._get_cached(cache_key)
@@ -241,7 +241,7 @@ class DataFetcher:
             if self.alpaca.connected:
                 price = self.alpaca.get_current_price(symbol)
                 if price and DEBUG_MODE:
-                    pass  # Kein Spam bei jedem Preis-Abruf
+                    pass  # No spam on every price fetch
 
             if price is None:
                 price = self._get_stock_price_yahoo(symbol)
@@ -258,7 +258,7 @@ class DataFetcher:
             if response.status_code == 200:
                 return float(response.json()["price"])
         except Exception as e:
-            print_warning(f"Cannot load crypto price for {symbol} unavailable: {str(e)}")
+            print_warning(f"Cannot fetch crypto price for {symbol}: {str(e)}")
         return None
 
     def _get_stock_price_yahoo(self, symbol):
@@ -273,7 +273,7 @@ class DataFetcher:
             if price:
                 return float(price)
         except Exception as e:
-            print_warning(f"Cannot load stock price for {symbol} unavailable (Yahoo): {str(e)}")
+            print_warning(f"Cannot fetch stock price for {symbol} (Yahoo): {str(e)}")
         return None
 
     def get_crypto_24h_stats(self, symbol):
@@ -298,7 +298,7 @@ class DataFetcher:
                 self._set_cached(cache_key, result, ttl=60)
                 return result
         except Exception as e:
-            print_warning(f"Kann 24h Stats unavailable: {str(e)}")
+            print_warning(f"Cannot fetch 24h stats: {str(e)}")
         return None
 
     # ===== Stock Data (Alpaca primary, Yahoo fallback) =====
@@ -306,15 +306,15 @@ class DataFetcher:
     @retry_on_failure(max_retries=2, delay=1.0, exceptions=(Exception,))
     def get_stock_data(self, symbol, days=60, interval="1h"):
         """
-        Hole Aktien-Daten - Alpaca zuerst, Yahoo Finance als Fallback
+        Fetch stock data — Alpaca first, Yahoo Finance as fallback.
 
         Args:
-            symbol: z.B. "AAPL"
-            days: How many days back?
+            symbol: e.g. "AAPL"
+            days: how many days back
             interval: "1m", "5m", "15m", "1h", "1d"
 
         Returns:
-            DataFrame mit OHLCV Daten
+            DataFrame with OHLCV data.
         """
         cache_key = f"stock_{symbol}_{days}_{interval}"
         cached = self._get_cached(cache_key)
@@ -372,7 +372,7 @@ class DataFetcher:
             df = df.reset_index(drop=True)
 
             if DEBUG_MODE:
-                print_success(f"{symbol} Daten loaded (Yahoo Fallback): {len(df)} bars")
+                print_success(f"{symbol} data loaded (Yahoo fallback): {len(df)} bars")
 
             return df
         except Exception as e:
@@ -401,7 +401,7 @@ class DataFetcher:
             self._set_cached(cache_key, result, ttl=300)
             return result
         except Exception as e:
-            print_warning(f"Cannot load info for {symbol} unavailable: {str(e)}")
+            print_warning(f"Cannot fetch info for {symbol}: {str(e)}")
         return None
 
     def clear_cache(self):

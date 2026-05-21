@@ -17,7 +17,7 @@ class AIEngine:
         try:
             response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
             if response.status_code == 200:
-                print_success(f"Verbunden mit Ollama auf {OLLAMA_HOST}")
+                print_success(f"Connected to Ollama at {OLLAMA_HOST}")
                 models = response.json().get("models", [])
                 if models:
                     available_models = [m["name"] for m in models]
@@ -36,15 +36,15 @@ class AIEngine:
     @retry_on_failure(max_retries=2, delay=2.0, backoff=2.0, exceptions=(requests.RequestException,))
     def analyze_market(self, asset, timeframe, technical_data, news_digest=None):
         """
-        Analysiere Marktdaten und generiere ein Trading Signal
+        Analyze market data and generate a trading signal.
 
         Args:
-            asset: String wie "BTCUSDT" oder "AAPL"
-            timeframe: String wie "1h" oder "1d"
-            technical_data: Dict mit technischen Indikatoren
+            asset: e.g. "BTCUSDT" or "AAPL"
+            timeframe: e.g. "1h" or "1d"
+            technical_data: dict with technical indicators
 
         Returns:
-            Dict mit Signal Info oder None
+            Signal dict or None
         """
         prompt = self._build_analysis_prompt(asset, timeframe, technical_data, news_digest=news_digest)
 
@@ -113,9 +113,9 @@ class AIEngine:
             conf = conf / 100.0
         signal['confidence'] = max(0.0, min(1.0, conf))
 
-        # Entry Price: fall back to close if missing or unrealistic
+        # Entry Price: fall back to close if missing or unrealistic (>10% deviation)
         entry = safe_float(signal.get('entry_price', 0))
-        if entry <= 0 or abs(entry - close) / close > 0.1:  # Mehr als 10% Abweichung
+        if entry <= 0 or abs(entry - close) / close > 0.1:
             signal['entry_price'] = close
         else:
             signal['entry_price'] = entry
@@ -203,7 +203,7 @@ Signal must be BUY, SELL or HOLD. Confidence between 0.0 and 1.0."""
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
-            print_error(f"Kann Modell-Info unavailable: {str(e)}")
+            print_error(f"Model info unavailable: {str(e)}")
         return None
 
 

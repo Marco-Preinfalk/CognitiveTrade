@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from utils import print_success, print_error, print_warning, print_info, format_currency
 
 class AlpacaBroker:
-    """Verbindung zu Alpaca Broker API"""
+    """Connection to the Alpaca Broker API."""
     
     def __init__(self, api_key, secret_key, paper=True):
         """
@@ -32,16 +32,16 @@ class AlpacaBroker:
             account = self.api.get_account()
             self.connected = True
             
-            print_success(f"Alpaca {'Paper' if paper else 'Live'} Trading verbunden!")
+            print_success(f"Alpaca {'Paper' if paper else 'Live'} Trading connected!")
             print_info(f"   Account: {account.account_number}")
             print_info(f"   Portfolio Value: {format_currency(float(account.portfolio_value))}")
             
         except Exception as e:
-            print_error(f"Alpaca Verbindung fehlgeschlagen: {str(e)}")
+            print_error(f"Alpaca connection failed: {str(e)}")
             self.connected = False
     
     def get_account_info(self):
-        """Hole Account Informationen"""
+        """Fetch account information."""
         try:
             account = self.api.get_account()
             return {
@@ -52,11 +52,11 @@ class AlpacaBroker:
                 'multiplier': float(account.multiplier),
             }
         except Exception as e:
-            print_error(f"Fehler beim Abrufen von Account Info: {str(e)}")
+            print_error(f"Error fetching account info: {str(e)}")
             return None
     
     def get_positions(self):
-        """Hole alle offenen Positionen"""
+        """Fetch all open positions."""
         try:
             positions = self.api.list_positions()
             result = {}
@@ -71,48 +71,48 @@ class AlpacaBroker:
                 }
             return result
         except Exception as e:
-            print_error(f"Fehler beim Abrufen von Positionen: {str(e)}")
+            print_error(f"Error fetching positions: {str(e)}")
             return {}
 
     def close_all_positions(self):
-        """Schliesse ALLE offenen Positionen bei Alpaca"""
+        """Close ALL open positions at Alpaca."""
         try:
             self.api.close_all_positions()
-            print_success("Alle Alpaca-Positionen geschlossen")
+            print_success("All Alpaca positions closed")
             return True
         except Exception as e:
-            print_error(f"Fehler beim Schliessen aller Positionen: {str(e)}")
+            print_error(f"Error closing all positions: {str(e)}")
             return False
 
     def close_position(self, symbol):
-        """Schliesse eine einzelne Position bei Alpaca"""
+        """Close a single position at Alpaca."""
         try:
-            # Cancel all pending orders first (Take Profit / Stop Loss), sonst gibt es einen "insufficient qty" Error
+            # Cancel all pending orders first (TP/SL), otherwise "insufficient qty" error
             open_orders = self.api.list_orders(status="open", symbols=[symbol])
             for o in open_orders:
                 self.api.cancel_order(o.id)
                 
             self.api.close_position(symbol)
-            print_success(f"Position {symbol} geschlossen")
+            print_success(f"Position {symbol} closed")
             return True
         except Exception as e:
-            print_error(f"Fehler beim Schliessen von {symbol}: {str(e)}")
+            print_error(f"Error closing {symbol}: {str(e)}")
             return False
     
     def submit_order(self, symbol, qty, side, order_type='market', time_in_force='day', limit_price=None):
         """
-        Sende Order an Alpaca
-        
+        Submit an order to Alpaca.
+
         Args:
-            symbol: z.B. "AAPL"
-            qty: Menge
-            side: "buy" oder "sell"
-            order_type: "market" oder "limit"
+            symbol: e.g. "AAPL"
+            qty: quantity
+            side: "buy" or "sell"
+            order_type: "market" or "limit"
             time_in_force: "day", "gtc" (good-til-cancelled)
-            limit_price: Preis wenn limit order
-        
+            limit_price: price for limit orders
+
         Returns:
-            Order ID oder None
+            Order dict or None
         """
         try:
             order = self.api.submit_order(
@@ -124,7 +124,7 @@ class AlpacaBroker:
                 limit_price=limit_price
             )
             
-            print_success(f"Order eingereicht: {side.upper()} {qty} {symbol} @ {order_type}")
+            print_success(f"Order submitted: {side.upper()} {qty} {symbol} @ {order_type}")
             return {
                 'order_id': order.id,
                 'symbol': order.symbol,
@@ -135,11 +135,11 @@ class AlpacaBroker:
                 'filled_avg_price': order.filled_avg_price,
             }
         except Exception as e:
-            print_error(f"Fehler beim Order einreichen: {str(e)}")
+            print_error(f"Error submitting order: {str(e)}")
             return None
     
     def get_order_status(self, order_id):
-        """Hole Order Status"""
+        """Fetch order status."""
         try:
             order = self.api.get_order(order_id)
             return {
@@ -149,38 +149,38 @@ class AlpacaBroker:
                 'filled_avg_price': order.filled_avg_price,
             }
         except Exception as e:
-            print_error(f"Fehler beim Abrufen von Order: {str(e)}")
+            print_error(f"Error fetching order: {str(e)}")
             return None
     
     def cancel_order(self, order_id):
-        """Storniere Order"""
+        """Cancel an order."""
         try:
             self.api.cancel_order(order_id)
-            print_success(f"Order {order_id} storniert")
+            print_success(f"Order {order_id} cancelled")
             return True
         except Exception as e:
-            print_error(f"Fehler beim Stornieren: {str(e)}")
+            print_error(f"Error cancelling order: {str(e)}")
             return False
     
     def cancel_all_orders(self):
-        """Storniere alle offenen Orders"""
+        """Cancel all open orders."""
         try:
             self.api.cancel_all_orders()
-            print_success("Alle offenen Orders storniert")
+            print_success("All open orders cancelled")
             return True
         except Exception as e:
-            print_error(f"Fehler beim Stornieren aller Orders: {str(e)}")
+            print_error(f"Error cancelling all orders: {str(e)}")
             return False
     
     def get_portfolio_history(self, period='1M'):
         """
-        Hole Portfolio History
-        
+        Fetch portfolio history.
+
         Args:
             period: "1D", "1W", "1M", "3M", "1A"
-        
+
         Returns:
-            Portfolio value over time
+            Portfolio value over time.
         """
         try:
             portfolio_history = self.api.get_portfolio_history(period=period)

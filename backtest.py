@@ -18,16 +18,16 @@ class BacktestEngine:
 
     def backtest_asset(self, asset, asset_type="CRYPTO", days=BACKTEST_DAYS, interval=BACKTEST_INTERVAL):
         """
-        Backteste eine Strategie auf einem einzelnen Asset
+        Backtest a strategy on a single asset.
 
         Args:
-            asset: z.B. "BTCUSDT" oder "AAPL"
-            asset_type: "CRYPTO" oder "STOCK"
-            days: How many days back?
-            interval: Zeitrahmen for bars
+            asset: e.g. "BTCUSDT" or "AAPL"
+            asset_type: "CRYPTO" or "STOCK"
+            days: how many days back
+            interval: timeframe for bars
 
         Returns:
-            Dict with backtest results
+            Dict with backtest results.
         """
         print_info(f"\nStarting backtest for {asset} ({days} days, interval: {interval})...")
 
@@ -39,7 +39,7 @@ class BacktestEngine:
             df = self.fetcher.get_stock_data(asset, days=days, interval=interval_map.get(interval, "1h"))
 
         if df is None or df.empty:
-            print_warning(f"No data for Backtest von {asset}")
+            print_warning(f"No data for backtest of {asset}")
             return None
 
 
@@ -159,7 +159,7 @@ class BacktestEngine:
             return
 
         print("\n" + "="*100)
-        print("BACKTEST RESULTATE")
+        print("BACKTEST RESULTS")
         print("="*100)
 
         total_combined_return = 0
@@ -167,9 +167,9 @@ class BacktestEngine:
 
         for result in results:
             print(f"\n{result['asset']}:")
-            print(f"  Startkapital: {format_currency(result['initial_balance'])}")
-            print(f"  Endkapital:   {format_currency(result['final_balance'])}")
-            print(f"  Gesamt P&L:   {format_currency(result['total_pnl'])} ({format_percent(result['total_return_percent'])})")
+            print(f"  Initial capital: {format_currency(result['initial_balance'])}")
+            print(f"  Final capital:   {format_currency(result['final_balance'])}")
+            print(f"  Total P&L:       {format_currency(result['total_pnl'])} ({format_percent(result['total_return_percent'])})")
             print(f"  Trades:       {result['total_trades']} ({result['winning_trades']}W/{result['losing_trades']}L)")
             print(f"  Win Rate:     {format_percent(result['win_rate'])}")
             print(f"  Profit Factor:{result['profit_factor']:.2f}")

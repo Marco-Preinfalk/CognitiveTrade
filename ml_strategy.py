@@ -39,7 +39,7 @@ class MLStrategyEngine:
                 self.trained = True
                 print_success(f"ML model '{self.model_name}' loaded")
             except Exception as e:
-                print_warning(f"Kann Model unavailable: {str(e)}")
+                print_warning(f"Cannot load model: {str(e)}")
     
     def _save_model(self):
         try:
@@ -53,13 +53,13 @@ class MLStrategyEngine:
     
     def prepare_training_data(self, asset, days=180, asset_type="STOCK"):
         """
-        Prepare historical data for training
-        
+        Prepare historical data for training.
+
         Args:
-            asset: z.B. "AAPL"
-            days: Wie viele Tage historisch?
-            asset_type: "STOCK" oder "CRYPTO"
-        
+            asset: e.g. "AAPL"
+            days: how many days of history
+            asset_type: "STOCK" or "CRYPTO"
+
         Returns:
             X (Features), y (Labels)
         """
@@ -115,13 +115,13 @@ class MLStrategyEngine:
     
     def train(self, asset, days=180, asset_type="STOCK", test_size=0.2):
         """
-        Train ML model on historical data
-        
+        Train ML model on historical data.
+
         Args:
-            asset: z.B. "AAPL"
-            days: Wie viele Tage?
-            asset_type: "STOCK" oder "CRYPTO"
-            test_size: % for test set
+            asset: e.g. "AAPL"
+            days: how many days
+            asset_type: "STOCK" or "CRYPTO"
+            test_size: fraction for test set
         """
         print_info(f"\nTraining ML model for {asset}...")
         
@@ -195,7 +195,7 @@ class MLStrategyEngine:
         
         fetcher = get_data_fetcher()
         
-        # Loading letzte 50 bars
+        # Load latest 50 bars
         if asset_type == "STOCK":
             df = fetcher.get_stock_data(asset, days=30)
         else:

@@ -14,12 +14,12 @@ class NewsFetcher:
         self.base_url = "https://finnhub.io/api/v1"
         self.cache = {}
         self.cache_expiry = {}
-        self.cache_ttl = 300  # 5 Minuten Cache
+        self.cache_ttl = 300  # 5 minute cache
         self.enabled = bool(self.api_key and self.api_key != "dein_key_hier")
 
         if not self.enabled:
             print_warning("Finnhub API key not configured. News disabled.")
-            print_info("Kostenlosen Key holen: https://finnhub.io/register")
+            print_info("Get a free key: https://finnhub.io/register")
         else:
             print_success("Finnhub news API connected")
 
@@ -41,16 +41,16 @@ class NewsFetcher:
     def get_company_news(self, symbol, days_back=3, max_articles=10):
         """
         Fetch current news for a company from Finnhub.
-        
-        Quellen: Reuters, MarketWatch, Seeking Alpha, Bloomberg, CNBC, etc.
+
+        Sources: Reuters, MarketWatch, Seeking Alpha, Bloomberg, CNBC, etc.
 
         Args:
             symbol: Stock symbol, e.g. "AAPL"
-            days_back: How many days back?
-            max_articles: Maximale Anzahl der Artikel
+            days_back: how many days back
+            max_articles: maximum number of articles
 
         Returns:
-            List of dicts mit: headline, summary, source, url, datetime, image
+            List of dicts with: headline, summary, source, url, datetime, image.
         """
         if not self.enabled:
             return []
@@ -110,7 +110,7 @@ class NewsFetcher:
                 self.enabled = False
                 return []
             elif response.status_code == 429:
-                print_warning("Finnhub Rate Limit – warte...")
+                print_warning("Finnhub rate limit — waiting...")
                 time.sleep(2)
                 return []
             else:
@@ -141,7 +141,7 @@ class NewsFetcher:
 
         lines = []
         for article in articles:
-            source = article.get("source", "Unbekannt")
+            source = article.get("source", "Unknown")
             headline = article.get("headline", "")
             dt = article.get("datetime", "")
 
@@ -153,11 +153,11 @@ class NewsFetcher:
                     delta = datetime.now() - article_time
                     hours = delta.total_seconds() / 3600
                     if hours < 1:
-                        time_ago = f"vor {int(delta.total_seconds() / 60)}min"
+                        time_ago = f"{int(delta.total_seconds() / 60)}m ago"
                     elif hours < 24:
-                        time_ago = f"vor {int(hours)}h"
+                        time_ago = f"{int(hours)}h ago"
                     else:
-                        time_ago = f"vor {int(hours / 24)}d"
+                        time_ago = f"{int(hours / 24)}d ago"
                 except (ValueError, TypeError):
                     time_ago = ""
 
@@ -183,7 +183,7 @@ class NewsFetcher:
             return cached
 
         try:
-            # Recommendation Trends von Finnhub
+            # Recommendation trends from Finnhub
             url = f"{self.base_url}/stock/recommendation"
             params = {"symbol": symbol, "token": self.api_key}
             response = requests.get(url, params=params, timeout=10)
@@ -191,7 +191,7 @@ class NewsFetcher:
             if response.status_code == 200:
                 data = response.json()
                 if data:
-                    latest = data[0]  # Neueste Empfehlung
+                    latest = data[0]  # Latest recommendation
                     result = {
                         "period": latest.get("period", ""),
                         "strong_buy": latest.get("strongBuy", 0),

@@ -46,7 +46,7 @@ class TechnicalAnalyzer:
         df['EMA_12'] = EMAIndicator(close=df['close'], window=12).ema_indicator()
         df['EMA_26'] = EMAIndicator(close=df['close'], window=26).ema_indicator()
 
-        # Average True Range (für Volatilität)
+        # Average True Range (volatility)
         atr = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14)
         df['ATR'] = atr.average_true_range()
 
@@ -55,14 +55,14 @@ class TechnicalAnalyzer:
         df['BB_upper'] = bb.bollinger_hband()
         df['BB_middle'] = bb.bollinger_mavg()
         df['BB_lower'] = bb.bollinger_lband()
-        df['BB_width'] = (df['BB_upper'] - df['BB_lower']) / df['BB_middle']  # Normalisierte Bandbreite
+        df['BB_width'] = (df['BB_upper'] - df['BB_lower']) / df['BB_middle']  # Normalized bandwidth
 
-        # ADX (Average Directional Index) - Trendstärke
+        # ADX (Average Directional Index) - trend strength
         try:
             adx = ADXIndicator(high=df['high'], low=df['low'], close=df['close'], window=14)
             df['ADX'] = adx.adx()
         except Exception:
-            df['ADX'] = 25  # Default: moderater Trend
+            df['ADX'] = 25  # Default: moderate trend
 
         # Stochastic Oscillator
         try:
@@ -77,7 +77,7 @@ class TechnicalAnalyzer:
         try:
             obv = OnBalanceVolumeIndicator(close=df['close'], volume=df['volume'])
             df['OBV'] = obv.on_balance_volume()
-            # OBV SMA für Trend
+            # OBV SMA for trend
             df['OBV_SMA'] = df['OBV'].rolling(window=20).mean()
         except Exception:
             df['OBV'] = 0
@@ -139,10 +139,10 @@ class TechnicalAnalyzer:
         details = {}
         close = indicators['close']
 
-        # === RSI Score (Gewicht: 20%) ===
+        # === RSI Score (Weight: 20%) ===
         rsi = indicators['RSI']
         if rsi < 30:
-            rsi_score = 30  # Stark überverkauft = bullish
+            rsi_score = 30  # Strongly oversold = bullish
         elif rsi < 40:
             rsi_score = 15
         elif rsi < 60:
@@ -150,11 +150,11 @@ class TechnicalAnalyzer:
         elif rsi < 70:
             rsi_score = -15
         else:
-            rsi_score = -30  # Stark überkauft = bearish
+            rsi_score = -30  # Strongly overbought = bearish
         score += rsi_score * 0.20
         details['RSI'] = rsi_score
 
-        # === MACD Score (Gewicht: 20%) ===
+        # === MACD Score (Weight: 20%) ===
         macd_diff = indicators['MACD_diff']
         if macd_diff > 0:
             macd_score = min(30, macd_diff / indicators['ATR'] * 20) if indicators['ATR'] > 0 else 15
@@ -163,22 +163,22 @@ class TechnicalAnalyzer:
         score += macd_score * 0.20
         details['MACD'] = round(macd_score, 1)
 
-        # === Moving Average Score (Gewicht: 25%) ===
+        # === Moving Average Score (Weight: 25%) ===
         sma20 = indicators['SMA_20']
         sma50 = indicators['SMA_50']
         ma_score = 0
         if close > sma20 > sma50:
-            ma_score = 25  # Price über beiden MAs, bullish
+            ma_score = 25  # Price above both MAs, bullish
         elif close > sma20:
             ma_score = 10
         elif close < sma20 < sma50:
-            ma_score = -25  # Price unter beiden MAs, bearish
+            ma_score = -25  # Price below both MAs, bearish
         elif close < sma20:
             ma_score = -10
         score += ma_score * 0.25
         details['MA'] = ma_score
 
-        # === Bollinger Bands Score (Gewicht: 15%) ===
+        # === Bollinger Bands Score (Weight: 15%) ===
         bb_upper = indicators['BB_upper']
         bb_lower = indicators['BB_lower']
         bb_range = bb_upper - bb_lower if bb_upper != bb_lower else 1
@@ -196,24 +196,24 @@ class TechnicalAnalyzer:
         score += bb_score * 0.15
         details['BB'] = bb_score
 
-        # === Volume Score (Gewicht: 10%) ===
+        # === Volume Score (Weight: 10%) ===
         vol_ratio = indicators.get('Volume_Ratio', 1)
-        # Hohes Volume bestätigt Trends
+        # High volume confirms trends
         vol_score = 0
         if vol_ratio > 1.5:
-            vol_score = 10 if score > 0 else -10  # Verstärkt aktuellen Trend
+            vol_score = 10 if score > 0 else -10  # Amplifies current trend
         elif vol_ratio < 0.5:
-            vol_score = -5 if score > 0 else 5  # Schwaches Volume = Umkehr möglich
+            vol_score = -5 if score > 0 else 5  # Weak volume = reversal possible
         score += vol_score * 0.10
         details['Volume'] = vol_score
 
-        # === Stochastic Score (Gewicht: 10%) ===
+        # === Stochastic Score (Weight: 10%) ===
         stoch_k = indicators.get('STOCH_K', 50)
         stoch_d = indicators.get('STOCH_D', 50)
         if stoch_k < 20 and stoch_k > stoch_d:
-            stoch_score = 15  # Überverkauft + Aufwärtskreuzung
+            stoch_score = 15  # Oversold + upward crossover
         elif stoch_k > 80 and stoch_k < stoch_d:
-            stoch_score = -15  # Überkauft + Abwärtskreuzung
+            stoch_score = -15  # Overbought + downward crossover
         else:
             stoch_score = 0
         score += stoch_score * 0.10

@@ -24,7 +24,7 @@ if ALPACA_ENABLED:
             print("[WARN] Alpaca connection failed, using local portfolio")
             alpaca_broker = None
     except Exception as e:
-        print(f"[WARN] Alpaca konnte nicht loaded werden: {e}")
+        print(f"[WARN] Alpaca could not be loaded: {e}")
         alpaca_broker = None
 
 # Auto-trade state (file-based for cross-process compat with Flask debug reloader)
@@ -52,7 +52,7 @@ def is_auto_trade_on():
     return os.path.exists(AUTO_TRADE_FILE)
 
 def set_auto_trade(enabled):
-    """Setze Auto-Trade Status (file-based)"""
+    """Set auto-trade status (file-based)."""
     if enabled:
         with open(AUTO_TRADE_FILE, 'w') as f:
             f.write('1')
@@ -61,26 +61,26 @@ def set_auto_trade(enabled):
             os.remove(AUTO_TRADE_FILE)
 
 def get_portfolio():
-    """Loading immer das aktuellste Portfolio (thread-safe)"""
+    """Load the latest portfolio from disk (thread-safe)."""
     with _portfolio_file_lock:
         p = Portfolio()
         p.load_from_file()
         return p
 
 def save_portfolio_safe(portfolio):
-    """Speichere Portfolio thread-safe"""
+    """Save portfolio to disk (thread-safe)."""
     with _portfolio_file_lock:
         portfolio.save_to_file()
 
 def sync_portfolio_with_alpaca(portfolio):
-    """Synchronisiere lokales Portfolio-Balance mit Alpaca"""
+    """Sync local portfolio balance with Alpaca."""
     if not alpaca_broker or not alpaca_broker.connected:
         return portfolio
 
     try:
         acct = alpaca_broker.get_account_info()
         if acct:
-            # Uebernehme immer Alpaca Cash, das ist die absolute Wahrheit
+            # Always adopt Alpaca cash as the source of truth
             portfolio.current_balance = acct.get('cash', portfolio.current_balance)
             
             # Check if Alpaca positions were closed that we still have open locally
@@ -88,7 +88,7 @@ def sync_portfolio_with_alpaca(portfolio):
             local_symbols = list(portfolio.positions.keys())
             for sym in local_symbols:
                 if sym not in alpaca_positions:
-                    # Position wurde bei Alpaca (z.B. durch TP/SL) geschlossen
+                    # Position was closed at Alpaca (e.g. by TP/SL)
                     # Must close locally too
                     print(f"[SYNC] {sym} closed at Alpaca, closing locally...")
                     trade = portfolio.positions[sym]
@@ -98,38 +98,38 @@ def sync_portfolio_with_alpaca(portfolio):
                     save_portfolio_safe(portfolio)
 
     except Exception as e:
-        print(f"[WARN] Alpaca Sync fehlgeschlagen: {e}")
+        print(f"[WARN] Alpaca sync failed: {e}")
 
     return portfolio
 
 def alpaca_startup_sync():
-    """Einmaliger Startup-Sync: Importiere Alpaca-Positionen und synchronisiere Balance"""
+    """One-time startup sync: import Alpaca positions and synchronize balance."""
     if not alpaca_broker or not alpaca_broker.connected:
         return
 
-    print("[SYNC] Starte Alpaca-Synchronisation...")
+    print("[SYNC] Starting Alpaca synchronization...")
 
-    # 1. Schaue was Alpaca hat
+    # 1. Check what Alpaca has
     positions = alpaca_broker.get_positions()
     acct = alpaca_broker.get_account_info()
 
     if not acct:
-        print("[SYNC] Kann Account-Info nicht laden, ueberspringe Sync")
+        print("[SYNC] Cannot load account info, skipping sync")
         return
 
-    # 2. Loading lokales Portfolio
+    # 2. Load local portfolio
     portfolio = get_portfolio()
 
-    # 3. Importiere Alpaca-Positionen, die nicht lokal sind
+    # 3. Import Alpaca positions that are not tracked locally
     imported = 0
     from portfolio import Trade
     for sym, pos_data in positions.items():
         if sym not in portfolio.positions:
-            print(f"[SYNC] Importiere Alpaca-Position: {sym} ({pos_data['qty']} shares)")
+            print(f"[SYNC] Importing Alpaca position: {sym} ({pos_data['qty']} shares)")
             qty = pos_data['qty']
             avg_price = pos_data['avg_entry_price']
             
-            # Manuell erstellen um Capital-Check in open_trade() zu umgehen
+            # Create manually to bypass capital check in open_trade()
             portfolio.trade_counter += 1
             trade_id = f"TRD_{portfolio.trade_counter:05d}"
             trade = Trade(
@@ -156,20 +156,20 @@ def alpaca_startup_sync():
             del portfolio.positions[sym]
             closed += 1
 
-    # 5. Aktualisiere Cash und speichere
+    # 5. Update cash and save
     equity = acct.get('equity', portfolio.initial_balance)
     cash = acct.get('cash', portfolio.current_balance)
     
     portfolio.current_balance = cash
     
-    # Wenn wir gar keine Trades in der Historie haben, setzen wir die Initial Balance
+    # If there are no trades in history, set initial balance to current equity
     if len(portfolio.closed_trades) == 0 and len(portfolio.positions) == 0:
         portfolio.initial_balance = equity
         
     portfolio.save_to_file()
     
-    print(f"[SYNC] Sync abgeschlossen! {imported} importiert, {closed} geschlossen.")
-    print(f"[SYNC] Lokale Balance: ${cash:,.2f}, Alpaca Equity: ${equity:,.2f}")
+    print(f"[SYNC] Sync complete! {imported} imported, {closed} closed.")
+    print(f"[SYNC] Local balance: ${cash:,.2f}, Alpaca equity: ${equity:,.2f}")
 
 def is_in_wash_cooldown(symbol):
     """Check if a symbol is in wash-trade cooldown"""
@@ -177,26 +177,26 @@ def is_in_wash_cooldown(symbol):
         elapsed = time.time() - _wash_trade_cooldown[symbol]
         if elapsed < WASH_TRADE_COOLDOWN_SECONDS:
             remaining = int(WASH_TRADE_COOLDOWN_SECONDS - elapsed)
-            print(f"[COOLDOWN] {symbol}: Noch {remaining}s Wash-Trade Cooldown")
+            print(f"[COOLDOWN] {symbol}: {remaining}s wash-trade cooldown remaining")
             return True
         else:
             del _wash_trade_cooldown[symbol]
     return False
 
 def background_trading_loop():
-    """Background Loop, der Markt checkt und Trades managt"""
+    """Background loop that monitors the market and manages trades."""
     global _last_equity_record_time
-    print("[BOT] Auto-Trade Background-Worker gestartet...")
+    print("[BOT] Auto-trade background worker started...")
     
     fetcher = get_data_fetcher()
     strategy = get_strategy_engine()
     
     while True:
         try:
-            # 1. Update Portfolio & check offene Positionen
+            # 1. Update portfolio & check open positions
             portfolio = get_portfolio()
             
-            # Sync mit Alpaca Balance
+            # Sync with Alpaca balance
             portfolio = sync_portfolio_with_alpaca(portfolio)
             
             current_prices = {}
@@ -209,14 +209,14 @@ def background_trading_loop():
                 closed = portfolio.update_open_positions(current_prices)
                 if closed:
                     save_portfolio_safe(portfolio)
-                    # Wenn Alpaca aktiv, schliesse auch dort
+                    # If Alpaca is active, close position there too
                     if alpaca_broker and alpaca_broker.connected:
                         for trade in closed:
                             side = "sell" if trade.signal_type == "BUY" else "buy"
                             symbol = trade.asset
-                            print(f"[ALPACA] Schliesse Position: {side} {symbol}")
+                            print(f"[ALPACA] Closing position: {side} {symbol}")
 
-                            # Wash-Trade Cooldown setzen
+                            # Set wash-trade cooldown
                             _wash_trade_cooldown[symbol] = time.time()
 
                             # Check if Alpaca actually holds the position
@@ -227,21 +227,21 @@ def background_trading_loop():
                                 else:
                                     print(f"[ALPACA] {symbol} not found at Alpaca, skipping close order")
                             except Exception as e:
-                                print(f"[ALPACA] Fehler beim Schliessen von {symbol}: {e}")
+                                print(f"[ALPACA] Error closing {symbol}: {e}")
             
-            # Periodische Equity-History Aufzeichnung (auch ohne Trades)
+            # Periodic equity history recording (even without trades)
             now = time.time()
             if now - _last_equity_record_time >= EQUITY_RECORD_INTERVAL:
                 portfolio._record_equity()
                 save_portfolio_safe(portfolio)
                 _last_equity_record_time = now
             
-            # 2. Wenn Auto-Trade aktiv, generiere Signale
+            # 2. If auto-trade is active, generate signals
             if is_auto_trade_on():
                 assets = STOCKS if TRADING_MODE in ["STOCKS", "HYBRID"] else CRYPTO_PAIRS
                 asset_type = "STOCK" if TRADING_MODE in ["STOCKS", "HYBRID"] else "CRYPTO"
                 
-                print(f"[AUTO-TRADE] Scanne {len(assets)} Assets... (Balance: ${portfolio.current_balance:.2f}, Positionen: {len(portfolio.positions)}/{MAX_POSITIONS})")
+                print(f"[AUTO-TRADE] Scanning {len(assets)} assets... (Balance: ${portfolio.current_balance:.2f}, Positions: {len(portfolio.positions)}/{MAX_POSITIONS})")
                 
                 for asset in assets:
                     if asset in portfolio.positions:
@@ -262,16 +262,16 @@ def background_trading_loop():
                         }
                     
                     if not signal:
-                        print(f"[AUTO-TRADE] {asset}: Kein Signal (Confidence zu niedrig)")
+                        print(f"[AUTO-TRADE] {asset}: No signal (confidence too low)")
                         continue
                     
                     if signal.get('signal') not in ['BUY', 'SELL']:
-                        print(f"[AUTO-TRADE] {asset}: Signal ist {signal.get('signal')} (kein Trade)")
+                        print(f"[AUTO-TRADE] {asset}: Signal is {signal.get('signal')} (no trade)")
                         continue
                     
-                    # RISK_PER_TRADE ist schon in % (z.B. 2.0 = 2%)
+                    # RISK_PER_TRADE is already in % (e.g. 2.0 = 2%)
                     risk_pct = RISK_PER_TRADE
-                    # Wenn RISK_PER_TRADE als Dezimalwert angegeben (z.B. 0.02), konvertiere
+                    # If RISK_PER_TRADE is given as decimal (e.g. 0.02), convert
                     if risk_pct < 1:
                         risk_pct = risk_pct * 100  # 0.02 -> 2.0
                     
@@ -292,27 +292,27 @@ def background_trading_loop():
                     print(f"[AUTO-TRADE] {asset}: Signal={signal.get('signal')} Conf={signal.get('confidence'):.2f} Entry=${entry_price:.2f} SL=${stop_loss:.2f} Size={position_size:.4f}")
                     
                     if position_size <= 0:
-                        print(f"[AUTO-TRADE] {asset}: Position Size ist 0 (Risk zu klein)")
+                        print(f"[AUTO-TRADE] {asset}: Position size is 0 (risk too small)")
                         continue
                     
-                    # Fuer Aktien: mindestens 1 Share, max 25% des Portfolios
+                    # For stocks: minimum 1 share, max 25% of portfolio
                     if asset_type == "STOCK":
                         max_position_value = portfolio.current_balance * 0.25
                         max_shares = int(max_position_value / entry_price)
                         position_size = max(1, min(int(position_size), max_shares))
-                        print(f"[AUTO-TRADE] {asset}: Shares nach Cap: {position_size} (Max: {max_shares})")
+                        print(f"[AUTO-TRADE] {asset}: Shares after cap: {position_size} (Max: {max_shares})")
                     
                     can_open = portfolio.can_open_position(asset, position_size, entry_price)
-                    print(f"[AUTO-TRADE] {asset}: can_open={can_open} (benoetigtes Kapital: ${position_size * entry_price:.2f})")
+                    print(f"[AUTO-TRADE] {asset}: can_open={can_open} (required capital: ${position_size * entry_price:.2f})")
                     
                     if can_open:
-                        # Nochmal Portfolio frisch laden (gegen Race Conditions)
+                        # Reload portfolio fresh (guard against race conditions)
                         portfolio = get_portfolio()
                         if asset in portfolio.positions:
                             print(f"[AUTO-TRADE] {asset}: Already opened (race condition avoided)")
                             continue
                         
-                        # 1. Lokales Portfolio updaten
+                        # 1. Update local portfolio
                         portfolio.open_trade(
                             asset, 
                             signal.get('signal'),
@@ -323,11 +323,11 @@ def background_trading_loop():
                         )
                         save_portfolio_safe(portfolio)
                         
-                        # 2. Alpaca Order senden (wenn aktiv)
+                        # 2. Send Alpaca order (if active)
                         if alpaca_broker and alpaca_broker.connected:
                             side = "buy" if signal.get('signal') == 'BUY' else "sell"
                             qty = max(1, int(position_size))
-                            print(f"[ALPACA] Sende Order: {side} {qty}x {asset} @ market")
+                            print(f"[ALPACA] Submitting order: {side} {qty}x {asset} @ market")
                             result = alpaca_broker.submit_order(
                                 symbol=asset,
                                 qty=qty,
@@ -335,42 +335,42 @@ def background_trading_loop():
                                 order_type='market'
                             )
                             if result:
-                                print(f"[ALPACA] Order erfolgreich: {result.get('order_id', 'N/A')}")
+                                print(f"[ALPACA] Order successful: {result.get('order_id', 'N/A')}")
                             else:
-                                print(f"[ALPACA] Order fehlgeschlagen fuer {asset}!")
+                                print(f"[ALPACA] Order failed for {asset}!")
                         
-                        print(f"[AUTO-TRADE] === TRADE EROEFFNET: {signal.get('signal')} {position_size} {asset} @ ${entry_price:.2f} ===")
+                        print(f"[AUTO-TRADE] === TRADE OPENED: {signal.get('signal')} {position_size} {asset} @ ${entry_price:.2f} ===")
                         time.sleep(2)  # Pause zwischen Trades
                     else:
-                        print(f"[AUTO-TRADE] {asset}: Trade konnte nicht eroeffnet werden (Kapital/Limit)")
+                        print(f"[AUTO-TRADE] {asset}: Trade could not be opened (capital/limit)")
                             
         except Exception as e:
             print(f"[AUTO-TRADE ERROR] {e}")
             import traceback
             traceback.print_exc()
             
-        # Warte vor dem naechsten Durchlauf
+        # Wait before next scan cycle
         wait_time = 60 if is_auto_trade_on() else 120
         if is_auto_trade_on():
-            print(f"[AUTO-TRADE] Naechster Scan in {wait_time}s... (Positionen: {len(portfolio.positions)})")
+            print(f"[AUTO-TRADE] Next scan in {wait_time}s... (Positions: {len(portfolio.positions)})")
         time.sleep(wait_time)
 
 @app.route('/')
 def dashboard():
-    """Hauptseite des Dashboards"""
+    """Serve the main dashboard page."""
     return render_template('index.html')
 
 @app.route('/api/portfolio')
 def get_portfolio_data():
-    """API: Portfolio Daten - nutzt Alpaca wenn verfuegbar"""
+    """API: Portfolio data — uses Alpaca when available."""
     portfolio = get_portfolio()
     
-    # Wenn Alpaca aktiv, hole echte Account-Daten
+    # If Alpaca is active, fetch real account data
     alpaca_info = None
     if alpaca_broker and alpaca_broker.connected:
         alpaca_info = alpaca_broker.get_account_info()
     
-    # Bereite aktuelle Preise vor
+    # Prepare current prices
     fetcher = get_data_fetcher()
     current_prices = {}
     for asset in portfolio.positions.keys():
@@ -398,7 +398,7 @@ def get_portfolio_data():
             'unrealized_pnl_percent': upnl_pct
         })
     
-    # Wenn Alpaca verbunden, auch Alpaca-Positionen einfliessen lassen
+    # If Alpaca is connected, incorporate Alpaca positions
     if alpaca_broker and alpaca_broker.connected and alpaca_info:
         # Alpaca hat das echte Equity
         alpaca_equity = alpaca_info.get('equity', stats['total_equity'])
@@ -407,7 +407,7 @@ def get_portfolio_data():
         alpaca_equity = stats['total_equity']
         alpaca_cash = portfolio.current_balance
         
-    # Extrahiere Equity History fuer den Chart
+    # Extract equity history for the chart
     equity_history = portfolio.equity_history[-500:] if portfolio.equity_history else []
 
     return jsonify({
@@ -429,10 +429,10 @@ def get_portfolio_data():
 
 @app.route('/api/trades')
 def get_trades():
-    """API: Letzte Trade History"""
+    """API: Recent trade history."""
     portfolio = get_portfolio()
     trades = []
-    for trade in portfolio.closed_trades[-50:]:  # Letzte 50 Trades
+    for trade in portfolio.closed_trades[-50:]:  # Last 50 trades
         trades.append({
             'id': trade.id,
             'asset': trade.asset,
@@ -448,8 +448,8 @@ def get_trades():
 
 @app.route('/api/signals')
 def get_signals():
-    """API: Live Trading Signals - nutzt gecachte Signale vom Background-Thread"""
-    # Verwende gecachte Signale statt neue AI-Aufrufe
+    """API: Live trading signals — uses cached signals from the background thread."""
+    # Use cached signals instead of new AI calls
     signals = []
     
     assets = STOCKS if TRADING_MODE in ["STOCKS", "HYBRID"] else CRYPTO_PAIRS
@@ -473,7 +473,7 @@ def get_signals():
 
 @app.route('/api/signals/detailed')
 def get_signals_detailed():
-    """API: Detaillierte Signals mit News-Kontext - nutzt gecachte Signale"""
+    """API: Detailed signals with news context — uses cached signals."""
     news_fetcher = get_news_fetcher()
     signals = []
 
@@ -481,14 +481,14 @@ def get_signals_detailed():
     asset_type = "STOCK" if TRADING_MODE in ["STOCKS", "HYBRID"] else "CRYPTO"
 
     for asset in assets:
-        # Verwende gecachte Signale statt neue AI-Aufrufe
+        # Use cached signals instead of new AI calls
         signal = None
         with _cached_signals_lock:
             cached = _cached_signals.get(asset)
             if cached and (time.time() - cached['timestamp']) < 900:
                 signal = cached['signal']
         
-        # Hole News fuer jedes Asset
+        # Fetch news for each asset
         news = []
         sentiment = None
         current_price = 0
@@ -498,7 +498,7 @@ def get_signals_detailed():
                 sentiment = news_fetcher.get_market_sentiment(asset)
             except Exception:
                 pass
-            # Hole aktuellen Preis auch wenn kein Signal
+            # Fetch current price even when there is no signal
             try:
                 fetcher = get_data_fetcher()
                 current_price = fetcher.get_current_price(asset) or 0
@@ -507,7 +507,7 @@ def get_signals_detailed():
 
         portfolio = get_portfolio()
         
-        # Bestimme den richtigen Status-Text
+        # Determine the correct status text
         if signal:
             reason_text = signal.get('reason', 'Signal generated')
         elif asset in portfolio.positions:
@@ -533,7 +533,7 @@ def get_signals_detailed():
 
 @app.route('/api/news/<symbol>')
 def get_news(symbol):
-    """API: Aktuelle Nachrichten fuer ein bestimmtes Symbol"""
+    """API: Current news for a specific symbol."""
     news_fetcher = get_news_fetcher()
     
     days = request.args.get('days', 3, type=int)
@@ -551,11 +551,11 @@ def get_news(symbol):
 
 @app.route('/api/market-info')
 def get_market_info():
-    """API: Market Informationen"""
+    """API: Market information."""
     fetcher = get_data_fetcher()
     market_data = []
 
-    for symbol in STOCKS[:8]:  # Top 8 Assets im Dashboard
+    for symbol in STOCKS[:8]:  # Top 8 assets in the dashboard
         info = fetcher.get_stock_info(symbol)
         if info and info.get('price'):
             market_data.append({
@@ -589,7 +589,7 @@ def autotrade_toggle():
     set_auto_trade(not currently_on)
     enabled = is_auto_trade_on()
     status_msg = "ON" if enabled else "OFF"
-    print(f"[AUTO-TRADE] Status geaendert: {status_msg}")
+    print(f"[AUTO-TRADE] Status changed: {status_msg}")
     return jsonify({
         'status': 'success',
         'enabled': enabled,
@@ -600,7 +600,7 @@ def autotrade_toggle():
 def alpaca_info():
     """API: Alpaca Account Info"""
     if not alpaca_broker or not alpaca_broker.connected:
-        return jsonify({'connected': False, 'message': 'Alpaca nicht verbunden'})
+        return jsonify({'connected': False, 'message': 'Alpaca not connected'})
     
     info = alpaca_broker.get_account_info()
     positions = alpaca_broker.get_positions()
@@ -637,10 +637,10 @@ def reset_portfolio():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    # Einmaliger Startup-Sync mit Alpaca
+    # One-time startup sync with Alpaca
     alpaca_startup_sync()
 
-    # Starte Background Trading Loop - mit Guard gegen doppeltes Starten
+    # Start background trading loop — guarded against double-start
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
         with _thread_lock:
             if not _thread_started:
@@ -648,11 +648,11 @@ if __name__ == '__main__':
                 auto_trade_thread = threading.Thread(target=background_trading_loop, daemon=True)
                 auto_trade_thread.start()
     
-    print("[START] Dashboard laeuft auf http://localhost:5000")
-    print(f"[CONFIG] Max Positionen: {MAX_POSITIONS}, Assets: {len(STOCKS)}")
+    print("[START] Dashboard running on http://localhost:5000")
+    print(f"[CONFIG] Max positions: {MAX_POSITIONS}, Assets: {len(STOCKS)}")
     if alpaca_broker and alpaca_broker.connected:
-        print("[ALPACA] Paper Trading verbunden - Trades werden an Alpaca gesendet!")
-        print("[ALPACA] Daten werden von Alpaca geholt (Yahoo als Fallback)")
+        print("[ALPACA] Paper trading connected — trades will be sent to Alpaca!")
+        print("[ALPACA] Data fetched from Alpaca (Yahoo as fallback)")
     else:
-        print("[INFO] Alpaca nicht verbunden - nutze lokales Paper Trading + Yahoo Daten")
+        print("[INFO] Alpaca not connected — using local paper trading + Yahoo data")
     app.run(debug=True, port=5000, use_reloader=False)

@@ -38,7 +38,7 @@ class CognitiveTrade:
         self.backtest_engine = get_backtest_engine()
         self.running = False
 
-        # Initialisiere Telegram Alerts
+        # Initialize Telegram alerts
         if TELEGRAM_ENABLED and TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
             is_placeholder = (
                 not TELEGRAM_BOT_TOKEN
@@ -65,7 +65,7 @@ class CognitiveTrade:
         try:
             while True:
                 print_divider()
-                print("🎯 HAUPTMENÜ")
+                print("🎯 MAIN MENU")
                 print_divider()
                 print("1. Fetch live trading signals")
                 print("2. Paper trading update (check prices)")

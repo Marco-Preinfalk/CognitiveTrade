@@ -83,7 +83,7 @@ def parse_ai_response(response_text):
                 try:
                     return json.loads(cleaned[json_start:i + 1])
                 except json.JSONDecodeError:
-                    json_start = -1  # Versuche nächstes JSON-Objekt
+                    json_start = -1  # Try next JSON object
 
     return None
 
@@ -133,11 +133,11 @@ def retry_on_failure(max_retries=3, delay=1.0, backoff=2.0, exceptions=(Exceptio
                 except exceptions as e:
                     last_exception = e
                     if attempt < max_retries:
-                        logger.warning(f"Retry {attempt + 1}/{max_retries} für {func.__name__}: {e}")
+                        logger.warning(f"Retry {attempt + 1}/{max_retries} for {func.__name__}: {e}")
                         time.sleep(current_delay)
                         current_delay *= backoff
                     else:
-                        logger.error(f"Alle {max_retries} Retries fehlgeschlagen für {func.__name__}: {e}")
+                        logger.error(f"All {max_retries} retries exhausted for {func.__name__}: {e}")
             raise last_exception
         return wrapper
     return decorator
